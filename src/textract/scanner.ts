@@ -7,7 +7,7 @@ import {
   AnalyzeDocumentCommandOutput,
   Block,
 } from "@aws-sdk/client-textract";
-import { includes, values, has } from "lodash";
+import { includes, has } from "lodash";
 
 const textractClient = new TextractClient({
   region: process.env.AWS_DEFAULT_REGION,
@@ -53,29 +53,35 @@ const getKeyValueMaps = (blocks: Block[]) => {
   return { keyMap, valueMap, blockMap };
 };
 
-type map = Map<string, Block>;
+type idBlockMap = Map<string, Block>;
 
-const getKeyValueRelationship = (keyMap: map, valueMap: map, blockMap: map) => {
-  const keyValues = new Map<string, string>();
-  const keyMapValues = values(keyMap); // array de blocks com tipo key
+const getKeyValueRelationship = (
+  keyMap: idBlockMap,
+  valueMap: idBlockMap,
+  blockMap: idBlockMap
+): Map<string, string> => {
+  const keyValuesMap = new Map<string, string>();
 
-  keyMapValues.forEach((keyMapValue: Block) => {
-    const valueBlock = findValueBlock(keyMapValue, valueMap);
-    const key = getText(keyMapValue, valueMap);
-    const value = getText(valueBlock, blockMap);
-    keyValues.set(key, value);
+  keyMap.forEach((block, id) => {
+    const key = getText(block, blockMap);
+
+    const valueBlock = findValueBlock(block, valueMap);
+    const value = getText(valueBlock as unknown as Block, blockMap);
+
+    keyValuesMap.set(key, value);
   });
 
-  return keyValues;
+  return keyValuesMap;
 };
 
-const findValueBlock = (keyBlock: Block, valueMap: map) => {
-  let valueBlock: any;
+const findValueBlock = (keyBlock: Block, valueMap: idBlockMap) => {
+  let valueBlock;
+  const valueMapObject = Object.fromEntries(valueMap);
 
   keyBlock.Relationships?.forEach((relationship) => {
     if (relationship.Type === "VALUE") {
       relationship.Ids?.every((valueId) => {
-        if (has(valueMap, valueId)) {
+        if (has(valueMapObject, valueId)) {
           valueBlock = valueMap.get(valueId);
           return false;
         }
@@ -86,7 +92,7 @@ const findValueBlock = (keyBlock: Block, valueMap: map) => {
   return valueBlock;
 };
 
-const getText = (result: Block, blocksMap: map) => {
+const getText = (result: Block, blocksMap: idBlockMap) => {
   let text = "";
 
   if (has(result, "Relationships")) {
@@ -106,15 +112,6 @@ const getText = (result: Block, blocksMap: map) => {
   return text.trim();
 };
 
-const displayBlockInfo = async (response: AnalyzeDocumentCommandOutput) => {
-  if (response.Blocks)
-    try {
-      response.Blocks.forEach((block: Block) => {});
-    } catch (err) {
-      console.log("Error trying to display block info. ", err);
-    }
-};
-
 const analyze_document_text = async () => {
   try {
     const analyzeDoc = new AnalyzeDocumentCommand(params);
@@ -122,13 +119,10 @@ const analyze_document_text = async () => {
 
     if (response.Blocks) {
       const { keyMap, valueMap, blockMap } = getKeyValueMaps(response.Blocks);
-      console.log(keyMap);
-      console.log(valueMap);
-      console.log(blockMap);
       const document_info = getKeyValueRelationship(keyMap, valueMap, blockMap);
 
-      console.log(JSON.stringify(document_info));
-      return document_info;
+      console.log(document_info);
+      return Object.fromEntries(document_info);
     }
 
     // in case no blocks are found
