@@ -59,7 +59,7 @@ const getKeyValueRelationship = (keyMap: map, valueMap: map, blockMap: map) => {
   const keyValues = new Map<string, string>();
   const keyMapValues = values(keyMap); // array de blocks com tipo key
 
-  keyMapValues.forEach((keyMapValue) => {
+  keyMapValues.forEach((keyMapValue: Block) => {
     const valueBlock = findValueBlock(keyMapValue, valueMap);
     const key = getText(keyMapValue, valueMap);
     const value = getText(valueBlock, blockMap);
@@ -125,10 +125,10 @@ const analyze_document_text = async () => {
       console.log(keyMap);
       console.log(valueMap);
       console.log(blockMap);
-      const keyValues = getKeyValueRelationship(keyMap, valueMap, blockMap);
+      const document_info = getKeyValueRelationship(keyMap, valueMap, blockMap);
 
-      console.log(JSON.stringify(keyValues));
-      return keyValues;
+      console.log(JSON.stringify(document_info));
+      return document_info;
     }
 
     // in case no blocks are found
