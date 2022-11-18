@@ -1,14 +1,18 @@
+require("dotenv").config();
+
 const _ = require("lodash");
-const aws = require("aws-sdk");
-const config = require("./config");
+const {
+  TextractClient,
+  AnalyzeDocumentCommand,
+} = require("@aws-sdk/client-textract");
 
-aws.config.update({
-  accessKeyId: config.awsAccesskeyID,
-  secretAccessKey: config.awsSecretAccessKey,
-  region: config.awsRegion,
+const textract = new TextractClient({
+  region: process.env.AWS_DEFAULT_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
-
-const textract = new aws.Textract();
 
 const getText = (result, blocksMap) => {
   let text = "";
@@ -88,25 +92,40 @@ const getKeyValueMap = (blocks) => {
   return { keyMap, valueMap, blockMap };
 };
 
-module.exports = async (buffer) => {
-  const params = {
-    Document: {
-      /* required */
-      Bytes: buffer,
-    },
-    FeatureTypes: ["FORMS"],
-  };
+const bucket = process.env.AWS_BUCKET_NAME;
+const key =
+  "91a2487ee4b70d222e967f91c9213f50-GUIA SIMPLES NACIONAL exemplo parte inferior.png";
 
-  const request = textract.analyzeDocument(params);
-  const data = await request.promise();
+// module.exports = async (buffer) => {
+
+// };
+
+const params = {
+  Document: {
+    /* required */
+    S3Object: {
+      Bucket: bucket,
+      Name: key,
+    },
+  },
+  FeatureTypes: ["FORMS"],
+};
+
+const analyze = async () => {
+  //   const request = textract.analyzeDocument(params);
+  const request = new AnalyzeDocumentCommand(params);
+  const data = await textract.send(request);
 
   if (data && data.Blocks) {
     const { keyMap, valueMap, blockMap } = getKeyValueMap(data.Blocks);
     const keyValues = getKeyValueRelationship(keyMap, valueMap, blockMap);
 
+    console.log(keyValues);
     return keyValues;
   }
 
   // in case no blocks are found return undefined
   return undefined;
 };
+
+analyze();
