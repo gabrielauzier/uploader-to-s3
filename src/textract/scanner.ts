@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 import {
   AnalyzeDocumentCommand,
   TextractClient,
@@ -16,20 +14,6 @@ const textractClient = new TextractClient({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
-
-const bucket = process.env.AWS_BUCKET_NAME;
-const key =
-  "91a2487ee4b70d222e967f91c9213f50-GUIA SIMPLES NACIONAL exemplo parte inferior.png";
-
-const params: AnalyzeDocumentCommandInput = {
-  Document: {
-    S3Object: {
-      Bucket: bucket,
-      Name: key,
-    },
-  },
-  FeatureTypes: ["FORMS"],
-};
 
 const getKeyValueMaps = (blocks: Block[]) => {
   const keyMap = new Map<string, Block>();
@@ -112,7 +96,21 @@ const getText = (result: Block, blocksMap: idBlockMap) => {
   return text.trim();
 };
 
-const analyze_document_text = async () => {
+const analyze_document_text = async (key: string) => {
+  const bucket = process.env.AWS_BUCKET_NAME;
+  // const key =
+  //   "91a2487ee4b70d222e967f91c9213f50-GUIA SIMPLES NACIONAL exemplo parte inferior.png";
+
+  const params: AnalyzeDocumentCommandInput = {
+    Document: {
+      S3Object: {
+        Bucket: bucket,
+        Name: key,
+      },
+    },
+    FeatureTypes: ["FORMS"],
+  };
+
   try {
     const analyzeDoc = new AnalyzeDocumentCommand(params);
     const response = await textractClient.send(analyzeDoc);
@@ -121,8 +119,9 @@ const analyze_document_text = async () => {
       const { keyMap, valueMap, blockMap } = getKeyValueMaps(response.Blocks);
       const document_info = getKeyValueRelationship(keyMap, valueMap, blockMap);
 
-      console.log(document_info);
-      return Object.fromEntries(document_info);
+      // console.log(document_info);
+      const result = Object.fromEntries(document_info);
+      return result;
     }
 
     // in case no blocks are found
@@ -132,4 +131,4 @@ const analyze_document_text = async () => {
   }
 };
 
-analyze_document_text();
+module.exports = analyze_document_text;
