@@ -1,19 +1,11 @@
 import {
   AnalyzeDocumentCommand,
-  TextractClient,
   AnalyzeDocumentCommandInput,
-  AnalyzeDocumentCommandOutput,
   Block,
 } from "@aws-sdk/client-textract";
 import { includes, has } from "lodash";
 
-const textractClient = new TextractClient({
-  region: process.env.AWS_DEFAULT_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+import { textractClient } from "../libs/textractClient";
 
 const getKeyValueMaps = (blocks: Block[]) => {
   const keyMap = new Map<string, Block>();
@@ -96,7 +88,7 @@ const getText = (result: Block, blocksMap: idBlockMap) => {
   return text.trim();
 };
 
-const analyze_document_text = async (key: string) => {
+const analyzeDocumentText = async (key: string) => {
   const bucket = process.env.AWS_BUCKET_NAME;
   // const key =
   //   "91a2487ee4b70d222e967f91c9213f50-GUIA SIMPLES NACIONAL exemplo parte inferior.png";
@@ -131,4 +123,4 @@ const analyze_document_text = async (key: string) => {
   }
 };
 
-module.exports = analyze_document_text;
+export { analyzeDocumentText };
