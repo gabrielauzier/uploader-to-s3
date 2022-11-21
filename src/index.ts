@@ -1,8 +1,8 @@
 require("dotenv").config();
 
-const express = require("express");
-const morgan = require("morgan");
-const path = require("path");
+import express from "express";
+import morgan from "morgan";
+import path from "path";
 
 const app = express();
 

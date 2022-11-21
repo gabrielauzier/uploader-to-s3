@@ -1,9 +1,9 @@
-const multer = require("multer");
-const path = require("path");
-const crypto = require("crypto");
+import multer, { Options } from "multer";
+import path from "path";
+import crypto from "crypto";
 
-const multerS3 = require("multer-s3");
-const client = require("../libs/s3Client");
+import multerS3 from "multer-s3";
+import { s3Client } from "../libs/s3Client";
 
 const storageTypes = {
   local: multer.diskStorage({
@@ -12,17 +12,17 @@ const storageTypes = {
     },
     filename: (req, file, cb) => {
       crypto.randomBytes(16, (err, hash) => {
-        if (err) cb(err);
+        if (err) cb(err, "");
 
-        file.key = `${hash.toString("hex")}-${file.originalname}`;
+        const filename = `${hash.toString("hex")}-${file.originalname}`;
 
-        cb(null, file.key);
+        cb(null, filename);
       });
     },
   }),
   s3: multerS3({
-    s3: client,
-    bucket: process.env.AWS_BUCKET_NAME,
+    s3: s3Client,
+    bucket: process.env.AWS_BUCKET_NAME!,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       crypto.randomBytes(16, (err, hash) => {
@@ -36,9 +36,9 @@ const storageTypes = {
   }),
 };
 
-module.exports = {
+const multerConfig: Options = {
   dest: path.resolve(__dirname, "..", "..", "tmp", "uploads"),
-  storage: storageTypes["s3"],
+  storage: storageTypes.s3,
   limits: {
     fileSize: 2 * 1024 * 1024,
   },
@@ -52,3 +52,5 @@ module.exports = {
     }
   },
 };
+
+export { multerConfig };

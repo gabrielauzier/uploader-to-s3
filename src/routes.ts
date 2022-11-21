@@ -1,8 +1,9 @@
-const routes = require("express").Router();
-const multer = require("multer");
-const multerConfig = require("./config/multer");
+import express from "express";
+import multer from "multer";
+import { multerConfig } from "./config/multer";
 
-const analyze = require("./textract/scanner");
+const routes = express.Router();
+import { analyzeDocumentText } from "./textract/analyze";
 
 routes.post(
   "/doc",
@@ -16,7 +17,7 @@ routes.post(
 
 routes.get("/doc/:key", async (req: any, res: any) => {
   const { key } = req.params;
-  const doc_info = await analyze(key);
+  const doc_info = await analyzeDocumentText(key);
 
   return res.json(doc_info);
 });
